@@ -296,8 +296,10 @@ const ProjectController = {
         cb => {
           if (template === 'example') {
             ProjectCreationHandler.createExampleProject(userId, projectName, cb)
-          } else {
+          } else if (template === '') {
             ProjectCreationHandler.createBasicProject(userId, projectName, cb)
+          } else {
+            ProjectCreationHandler.createCustomProject(userId, projectName, cb, template)
           }
         }
       ],
