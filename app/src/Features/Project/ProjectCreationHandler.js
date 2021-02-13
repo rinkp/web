@@ -248,6 +248,77 @@ const ProjectCreationHandler = {
       }
     )
   },
+    
+  createCustomProject(owner_id, projectName, callback, template) {
+    if (callback == null) {
+      callback = function(error, project) {}
+    }
+    return ProjectCreationHandler.createBlankProject(
+      owner_id,
+      projectName,
+      function(error, project) {
+        if (error != null) {
+          return callback(error)
+        }
+        return async.series(
+          [
+            callback =>
+              ProjectCreationHandler._buildTemplate(
+                template + '/main.tex',
+                owner_id,
+                projectName,
+                function(error, docLines) {
+                  if (error != null) {
+                    return callback(error)
+                  }
+                  return ProjectCreationHandler._createRootDoc(
+                    project,
+                    owner_id,
+                    docLines,
+                    callback
+                  )
+                }
+              ),
+            callback =>
+              ProjectCreationHandler._buildTemplate(
+                'references.bib',
+                owner_id,
+                projectName,
+                function(error, docLines) {
+                  if (error != null) {
+                    return callback(error)
+                  }
+                  return ProjectEntityUpdateHandler.addDoc(
+                    project._id,
+                    project.rootFolder[0]._id,
+                    'references.bib',
+                    docLines,
+                    owner_id,
+                    (error, doc) => callback(error)
+                  )
+                }
+              ),
+            function(callback) {
+              const universePath = Path.resolve(
+                __dirname + '/../../../templates/project_files/universe.jpg'
+              )
+              return ProjectEntityUpdateHandler.addFile(
+                project._id,
+                project.rootFolder[0]._id,
+                'universe.jpg',
+                universePath,
+                null,
+                owner_id,
+                callback
+              )
+            }
+          ],
+          error => callback(error, project)
+        )
+      }
+    )
+  },
+
 
   _createRootDoc(project, owner_id, docLines, callback) {
     if (callback == null) {
